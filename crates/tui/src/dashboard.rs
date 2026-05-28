@@ -313,7 +313,7 @@ fn top_procs() -> (Vec<ProcInfo>, Vec<ProcInfo>) {
             let after:Vec<&str>=stat.splitn(2,')').nth(1).unwrap_or("").split_whitespace().collect();
             if after.len()<13{continue;}
             let ut:u64=after[11].parse().unwrap_or(0); let st:u64=after[12].parse().unwrap_or(0);
-            let mem_kb:u64=r(&format!("{}/status",pd)).lines().find(|l|l.starts_with("VmRSS:")).and_then(|l|l.split_whitespace().nth(1).unwrap_or("0").parse().ok()).unwrap_or(0);
+            let mem_kb:u64=r(&format!("{}/statm",pd)).split_whitespace().nth(1).and_then(|s|s.parse::<u64>().ok()).unwrap_or(0)*4; // pages to KB (4KB pages)
             let cpu_ticks=ut+st;
             let anomaly = cpu_ticks > 10000 || mem_kb > 500 * 1024;
             cl.push(ProcInfo{name:name.clone(),pid,cpu:cpu_ticks as f64,mem_kb,anomaly});
@@ -369,9 +369,6 @@ fn port_priority(proc_name: &str) -> u32 {
 }
 
 pub fn is_virt(n: &str) -> bool { n=="lo" || n.starts_with("docker") || n.starts_with("veth") || n.starts_with("br-") || n.starts_with("virbr") || n.starts_with("tap") || n.starts_with("tun") || n.starts_with("cali") || n.starts_with("flannel") || n.starts_with("kube") || n.starts_with("cni") }
-fn fmem(kb: u64) -> String { if kb > 1048576 { format!("{:.2}GB", kb as f64 / 1048576.0) } else if kb > 1024 { format!("{:.0}MB", kb as f64 / 1024.0) } else { format!("{}KB", kb) } }
-fn fmt_kb_short(kb: u64) -> String { fmem(kb) }
-
 fn get_user(uid: u32) -> String {
     let passwd = r("/etc/passwd");
     for l in passwd.lines() {

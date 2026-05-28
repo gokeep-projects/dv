@@ -35,7 +35,7 @@ pub struct App {
     // Middleware + Docker states
     mw_kind: MiddlewareKind, mw_sel: usize, redis: RedisState, es: EsState, kafka: KafkaState,
     nginx: NginxState, tomcat: TomcatState, caddy: CaddyState, docker: DockerState,
-    discovered: Vec<DiscoveredService>, disc_loaded: bool, mw_subpanel: usize,
+    discovered: Vec<DiscoveredService>, disc_loaded: bool,
 }
 
 impl App {
@@ -55,7 +55,7 @@ impl App {
             mode:Mode::Normal,input_buf:String::new(),output_buf:String::new(),output_err:false,
             app_scroll:0,status:"Tab切换视图 ↑↓选择 Enter运行 /搜索 q退出".into(),quit:false,
             mw_kind:MiddlewareKind::Overview,mw_sel:0,redis,es,kafka,nginx,tomcat,caddy,docker,
-            discovered:Vec::new(),disc_loaded:false,mw_subpanel:0}
+            discovered:Vec::new(),disc_loaded:false}
     }
 
     pub fn run(mut self, term: &mut ratatui::Terminal<impl ratatui::backend::Backend>) -> Result<(), Box<dyn std::error::Error>> {
@@ -332,10 +332,8 @@ impl App {
 
     fn render_docker_view(&mut self,f:&mut Frame,t:&Theme){
         let a=f.area().inner(Margin::new(1,0));
-        let dm=|s:&str|->Span{Span::styled(s.to_string(),Style::default().fg(t.text_dim))};
-        let dp=|s:&str|->Span{Span::styled(s.to_string(),Style::default().fg(t.primary).bold())};
         f.render_widget(Paragraph::new(Line::from(vec![
-            Span::styled(" 🐳 Docker ",Style::default().fg(t.primary).bold()),
+            Span::styled(" \u{25d0} Docker ",Style::default().fg(t.primary).bold()),
             Span::styled(format!("| {}容器 {}镜像 | Tab切换视图",self.docker.containers.len(),self.docker.images.len()),Style::default().fg(t.text_muted)),
         ])),Rect{height:1,..a});
         let body=Rect{y:a.y+1,height:a.height.saturating_sub(1),..a};
@@ -358,7 +356,6 @@ impl App {
         let dm=|s:&str|->Span{Span::styled(s.to_string(),Style::default().fg(t.text_dim))};
         let dp=|s:&str|->Span{Span::styled(s.to_string(),Style::default().fg(t.primary).bold())};
         let dt=|s:&str|->Span{Span::styled(s.to_string(),Style::default().fg(t.text))};
-        let da=|s:&str|->Span{Span::styled(s.to_string(),Style::default().fg(t.accent).bold())};
         let manageable=MiddlewareKind::manageable();
         let hdr=if self.mw_kind==MiddlewareKind::Overview{
             Line::from(vec![dp(" 中间件总览 "),dm(&format!("| {}种 ",manageable.len())),dm(if self.disc_loaded{"已扫描"}else{"扫描中..."}),dm(" | ↑↓选择 Enter进入 1-9跳转 Tab切换")])
@@ -380,7 +377,6 @@ impl App {
                 let c=k.color(t);
                 let sel=i==self.mw_sel;
                 let sty=if sel{Style::default().fg(c).bg(t.surface_alt).bold()}else{Style::default().fg(t.text)};
-                let num=Span::styled(format!(" {} ",i+1),Style::default().fg(if sel{c}else{t.text_muted}).bg(if sel{t.surface_alt}else{t.surface}).bold());
                 let icon=Span::styled(format!("{} ",k.icon()),Style::default().fg(c));
                 let name=Span::styled(format!("{:<14}",k.name()),sty);
                 let count=Span::styled(format!("({})",conns),Style::default().fg(if conns>0{t.success}else{t.text_muted}));
@@ -460,7 +456,6 @@ impl App {
 
 fn cat_tag(c:&devtool_core::types::PluginCategory)->&str{match c{devtool_core::types::PluginCategory::DataTool=>"D",devtool_core::types::PluginCategory::SystemTool=>"S",devtool_core::types::PluginCategory::Security=>"K",devtool_core::types::PluginCategory::Middleware=>"M",devtool_core::types::PluginCategory::Script=>"R",devtool_core::types::PluginCategory::Network=>"N",devtool_core::types::PluginCategory::Custom(_)=>"?"}}
 fn centered_rect(px:u16,py:u16,r:Rect)->Rect{let p=Layout::vertical([Constraint::Percentage((100-py)/2),Constraint::Percentage(py),Constraint::Percentage((100-py)/2)]).split(r);Layout::horizontal([Constraint::Percentage((100-px)/2),Constraint::Percentage(px),Constraint::Percentage((100-px)/2)]).split(p[1])[1]}
-fn fmt_uptime(s:u64)->String{let d=s/86400;format!("{}d{}h",d,(s%86400)/3600)}
 fn fmt_big(n:u64)->String{if n>1e9 as u64{format!("{:.1}B",n as f64/1e9)}else if n>1e6 as u64{format!("{:.1}M",n as f64/1e6)}else if n>1e3 as u64{format!("{:.1}K",n as f64/1e3)}else{n.to_string()}}
 fn fmt_bytes(f:f64)->String{if f>1e9{format!("{:.2}GB",f/1e9)}else if f>1e6{format!("{:.1}MB",f/1e6)}else if f>1e3{format!("{:.0}KB",f/1e3)}else{format!("{}B",f as u64)}}
 fn fmt_rate(f:f64)->String{if f>1e9{format!("{:.2}GB/s",f/1e9)}else if f>1e6{format!("{:.1}MB/s",f/1e6)}else if f>1e3{format!("{:.0}KB/s",f/1e3)}else{format!("{}B/s",f as u64)}}

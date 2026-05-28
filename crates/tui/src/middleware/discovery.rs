@@ -110,7 +110,7 @@ pub fn discover_all() -> Vec<DiscoveredService> {
                         log_path: log_dirs.iter().find(|l| std::path::Path::new(l).exists()).map(|l| l.to_string()),
                         version: None, status: ServiceStatus::Stopped,
                     });
-                    found = true; break;
+                    break;
                 }
             }
         }

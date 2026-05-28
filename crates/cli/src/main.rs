@@ -69,7 +69,7 @@ fn run(cli: Cli, manager: &PluginManager) -> Result<(), Box<dyn std::error::Erro
 
             let input_data = file.as_ref().map(|p| std::fs::read_to_string(p)).transpose()?.or(input);
             let params: HashMap<String, String> = params.into_iter().collect();
-            let desc = shortcuts::describe(pname, aname, lang);
+            let _desc = shortcuts::describe(pname, aname, lang);
 
             let result = manager.execute(pname, PluginInput { action: aname.into(), params, input_data, input_file: file })?;
             if result.success { println!("{}", result.data); }

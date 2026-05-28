@@ -2,7 +2,7 @@ use devtool_core::error::{PluginError, PluginResult};
 use devtool_core::plugin::Plugin;
 use devtool_core::types::*;
 use md5::Digest as Md5Digest;
-use sha2::{Sha256, Sha512, Digest};
+use sha2::{Sha256, Sha512};
 
 struct CryptoPlugin;
 
