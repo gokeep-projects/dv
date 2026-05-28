@@ -1,59 +1,72 @@
 <div align="center">
 
-# DevTool
+```
+ ██████╗ ███████╗██╗   ██╗████████╗ ██████╗  ██████╗ ██╗
+ ██╔══██╗██╔════╝██║   ██║╚══██╔══╝██╔═══██╗██╔═══██╗██║
+ ██║  ██║█████╗  ██║   ██║   ██║   ██║   ██║██║   ██║██║
+ ██║  ██║██╔══╝  ╚██╗ ██╔╝   ██║   ██║   ██║██║   ██║██║
+ ██████╔╝███████╗ ╚████╔╝    ██║   ╚██████╔╝╚██████╔╝███████╗
+ ╚═════╝ ╚══════╝  ╚═══╝     ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝
+```
 
-**High-performance Rust development toolkit with hot-swappable plugin architecture**
+**Rust 高性能开发工具箱 | 热插拔插件架构 | CLI / TUI / Web 三端一体**
 
 [![CI](https://github.com/gokeep-projects/dv/actions/workflows/ci.yml/badge.svg)](https://github.com/gokeep-projects/dv/actions/workflows/ci.yml)
 [![Release](https://github.com/gokeep-projects/dv/actions/workflows/release.yml/badge.svg)](https://github.com/gokeep-projects/dv/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg)](https://www.rust-lang.org)
 
-[Features](#features) | [Install](#installation) | [Usage](#usage) | [Architecture](#architecture) | [Plugins](#plugins) | [Build](#building)
+**[功能特性](#-功能特性) | [快速安装](#-快速安装) | [使用指南](#-使用指南) | [插件列表](#-插件列表) | [架构设计](#-架构设计) | [编译构建](#-编译构建)**
 
 </div>
 
 ---
 
-## Features
+## 功能特性
 
-- **Three Interfaces** — CLI, TUI (terminal UI), Web UI, all sharing the same plugin set
-- **Hot-Swappable Plugins** — Dynamic `.so`/`.dll` loading via `libloading`, reload without restart
-- **12 Built-in Plugins** — JSON, Crypto, Terminal, Log Search, Service Status, Middleware, Script Runner, Git, HTTP, File, Elasticsearch, Sysinfo
-- **Real-time Dashboard** — CPU, memory, disk, network, process monitoring with anomaly detection
-- **Middleware Management** — Redis, Elasticsearch, Kafka, Nginx, Tomcat, Caddy, Docker
-- **Docker Management** — Container lifecycle, stats, logs, inspection
-- **Cross-Platform** — Linux (x86_64, aarch64), macOS (Intel, Apple Silicon), Windows
-- **Static Binaries** — musl-linked Linux builds, zero external dependencies, offline deployment
-- **Auto-Discovery** — Detects running middleware services automatically
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  ■ 三端一体          CLI 命令行 + TUI 终端UI + Web 可视化           │
+│  ■ 热插拔插件        libloading 动态加载 .so/.dll, 运行时重载       │
+│  ■ 12个内置插件      JSON / 加密 / 终端 / 日志 / 服务检测 / 中间件  │
+│  ■ 实时监控面板      CPU / 内存 / 磁盘 / 网络 / 进程 + 异常检测    │
+│  ■ 中间件管理        Redis / ES / Kafka / Nginx / Tomcat / Caddy    │
+│  ■ Docker 管理       容器生命周期 / 资源统计 / 日志 / 详情           │
+│  ■ 跨平台编译        Linux x86_64/aarch64 / macOS / Windows         │
+│  ■ 静态二进制        musl 链接, 零外部依赖, 离线部署                │
+│  ■ 自动发现          扫描运行中的中间件服务, 自动识别               │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
-## Installation
+## 快速安装
 
-### Download Pre-built Binaries
+### 下载预编译二进制
 
-Download from [GitHub Releases](https://github.com/gokeep-projects/dv/releases):
+从 [GitHub Releases](https://github.com/gokeep-projects/dv/releases) 下载:
 
-| Platform | Architecture | File |
-|----------|-------------|------|
-| Linux | x86_64 | `devtool-linux-x86_64.tar.gz` |
-| Linux | aarch64 | `devtool-linux-aarch64.tar.gz` |
-| macOS | x86_64 | `devtool-macos-x86_64.tar.gz` |
-| macOS | aarch64 | `devtool-macos-aarch64.tar.gz` |
-| Windows | x86_64 | `devtool-windows-x86_64.zip` |
+| 平台 | 架构 | 文件 | 大小 |
+|------|------|------|------|
+| Linux | x86_64 | `devtool-linux-x86_64.tar.gz` | ~1.9MB |
+| Linux | aarch64 | `devtool-linux-aarch64.tar.gz` | ~1.7MB |
+| macOS | x86_64 | `devtool-macos-x86_64.tar.gz` | ~1.7MB |
+| macOS | aarch64 (Apple Silicon) | `devtool-macos-aarch64.tar.gz` | ~1.6MB |
+| Windows | x86_64 | `devtool-windows-x86_64.zip` | ~1.6MB |
 
 ```bash
 # Linux x86_64
 curl -L https://github.com/gokeep-projects/dv/releases/latest/download/devtool-linux-x86_64.tar.gz | tar xz
-chmod +x devtool
-sudo mv devtool /usr/local/bin/
+chmod +x devtool && sudo mv devtool /usr/local/bin/
+
+# Linux aarch64
+curl -L https://github.com/gokeep-projects/dv/releases/latest/download/devtool-linux-aarch64.tar.gz | tar xz
+chmod +x devtool && sudo mv devtool /usr/local/bin/
 
 # macOS (Apple Silicon)
 curl -L https://github.com/gokeep-projects/dv/releases/latest/download/devtool-macos-aarch64.tar.gz | tar xz
-chmod +x devtool
-sudo mv devtool /usr/local/bin/
+chmod +x devtool && sudo mv devtool /usr/local/bin/
 ```
 
-### Build from Source
+### 源码编译
 
 ```bash
 git clone https://github.com/gokeep-projects/dv.git
@@ -61,75 +74,116 @@ cd dv
 cargo build --release --bin devtool
 ```
 
-## Usage
+## 使用指南
 
-### TUI Mode (Interactive Terminal UI)
+### TUI 模式 (交互式终端)
 
 ```bash
 devtool tui
 ```
 
-**Keybindings:**
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ ◆ Ubuntu 22.04 │ server01 │ 5.15.0 │ x86_64                     │
+├────────────────┬─────────────────────────────────────────────────┤
+│ ▶ 仪表盘       │  ▲ 系统 │ CPU                                  │
+│   插件 (12)    │  OS: Ubuntu 22.04  Load: 0.50 0.30 0.20        │
+│   Docker       │  CPU: 8核@3600MHz  Use: 12.3%                  │
+│   中间件       │                                               │
+│                │  ● 网络                                       │
+│                │  ↓ 1.2MB/s  ↑ 340KB/s                         │
+│                │                                               │
+│                │  ■ 内存                                       │
+│                │  Used: 4.2GB / 16GB (26.3%)                   │
+│                │                                               │
+│                │  ◇ 磁盘                                       │
+│                │  /dev/sda2  100G  45G  55G  45% /             │
+├────────────────┴─────────────────────────────────────────────────┤
+│ →:插件 Tab:切换 /:搜索 r:重载 q:退出                            │
+└──────────────────────────────────────────────────────────────────┘
+```
 
-| Key | Action |
-|-----|--------|
-| `Tab` / `Shift+Tab` | Switch views (Dashboard / Plugins / Docker / Middleware) |
-| `↑` / `↓` | Navigate items |
-| `Enter` | Select / Execute |
-| `q` | Quit |
-| `/` | Search / Filter |
-| `F1` | Help |
+**快捷键:**
 
-### Web Mode
+| 按键 | 功能 |
+|------|------|
+| `Tab` / `Shift+Tab` | 切换视图 (仪表盘/插件/Docker/中间件) |
+| `↑` / `↓` | 上下选择 |
+| `Enter` | 进入/执行 |
+| `q` | 退出 |
+| `/` | 搜索/过滤 |
+| `F1` | 帮助 |
+| `r` | 重载插件/刷新数据 |
+| `1`-`9` | 中间件快速跳转 |
+
+### Web 模式
 
 ```bash
 devtool web --port 8080 --host 0.0.0.0
 ```
 
-Opens a glassmorphism-themed web dashboard at `http://localhost:8080`.
+浏览器打开 `http://localhost:8080`, 玻璃拟态风格暗色主题。
 
-### CLI Mode
+### CLI 模式
 
 ```bash
-# List all plugins
+# 列出所有插件
 devtool list
 
-# Execute a plugin directly
+# 直接执行插件
 devtool exec json-tool format --input '{"b":2,"a":1}'
 devtool exec crypto hash --algo sha256 --input "hello"
 devtool exec crypto base64-encode --input "hello"
 devtool exec log-search grep --pattern "ERROR" --path /var/log/syslog
 
-# Plugin management
+# 插件管理
 devtool plugin reload json-tool
 devtool plugin load ./path/to/custom.so
 
-# Generate shell completions
+# 生成 shell 自动补全
 devtool completions bash > ~/.bash_completion.d/devtool
 devtool completions zsh > ~/.zfunc/_devtool
 ```
 
-## Architecture
+## 插件列表
+
+| 插件 | 快捷键 | 功能说明 |
+|------|--------|----------|
+| **JSON Tool** | `j` | JSON 格式化、校验、查询(jq语法)、对比 |
+| **Crypto** | `c` | AES/RSA 加密、Base64、SHA256/MD5、JWT、HMAC |
+| **Terminal** | `t` | Shell 命令执行、PTY 交互 |
+| **Log Search** | `l` | 正则搜索、高亮匹配、日志解析 |
+| **Service Status** | `s` | HTTP/TCP/进程 健康检查 |
+| **Middleware** | `m` | Redis/MySQL/Kafka 连接测试 |
+| **Script Runner** | `r` | 嵌入式 Rhai 脚本执行 |
+| **Git Tools** | `g` | Git 操作: diff/log/status |
+| **HTTP Client** | `h` | HTTP 请求, 支持全部方法 |
+| **File Tool** | `f` | 文件操作、搜索、监听 |
+| **Elasticsearch** | `e` | ES 集群管理、索引操作 |
+| **Sysinfo** | `i` | 系统信息采集 |
+
+## 架构设计
 
 ```
 devtool/
 ├── crates/
-│   ├── core/          # Plugin trait, PluginManager, shared types
-│   ├── cli/           # CLI binary entry point, arg parsing
-│   ├── tui/           # Terminal UI (ratatui + crossterm)
-│   │   ├── app.rs     # Main app state, event loop, rendering
-│   │   ├── dashboard.rs  # System monitoring, anomaly detection
-│   │   ├── theme.rs   # Color palette, styles
-│   │   └── middleware/ # Redis, ES, Kafka, Nginx, Docker, etc.
-│   ├── web/           # Web server (axum + WebSocket)
-│   └── plugins/       # 12 plugin crates (cdylib)
-├── assets/web/        # Web UI (HTML/CSS/JS, embedded via rust-embed)
-└── scripts/           # Build & release scripts
+│   ├── core/              # 插件 trait、PluginManager、共享类型
+│   ├── cli/               # CLI 入口、参数解析
+│   ├── tui/               # 终端 UI (ratatui + crossterm)
+│   │   ├── app.rs         # 主应用状态、事件循环、渲染
+│   │   ├── dashboard.rs   # 系统监控、异常检测
+│   │   ├── theme.rs       # 颜色主题
+│   │   └── middleware/     # Redis/ES/Kafka/Nginx/Docker 管理
+│   ├── web/               # Web 服务 (axum + WebSocket)
+│   └── plugins/           # 12 个插件 crate (cdylib)
+├── assets/web/            # Web UI (HTML/CSS/JS, rust-embed 嵌入)
+├── .github/workflows/     # CI/CD 流水线
+└── scripts/               # 构建发布脚本
 ```
 
-### Plugin System
+### 插件系统
 
-Each plugin is a Rust crate compiled as `cdylib`. The `Plugin` trait:
+每个插件是独立的 Rust crate, 编译为 `cdylib` 动态库:
 
 ```rust
 pub trait Plugin: Send + Sync {
@@ -142,97 +196,89 @@ pub trait Plugin: Send + Sync {
 }
 ```
 
-Plugins are discovered at runtime from the plugin directory. Hot-reload via `devtool plugin reload <name>` or pressing `r` in TUI.
+运行时从插件目录自动发现加载, 支持热重载: `devtool plugin reload <name>` 或 TUI 中按 `r`。
 
-## Plugins
+## 编译构建
 
-| Plugin | Key | Description |
-|--------|-----|-------------|
-| **JSON Tool** | `j` | Format, validate, query (jq-like), diff JSON |
-| **Crypto** | `c` | AES, RSA, Base64, SHA256, MD5, JWT, HMAC |
-| **Terminal** | `t` | Shell command execution, PTY interaction |
-| **Log Search** | `l` | Regex/grep with highlighting, log parsing |
-| **Service Status** | `s` | HTTP/TCP/process health checks |
-| **Middleware** | `m` | Redis/MySQL/Kafka connection testing |
-| **Script Runner** | `r` | Embedded Rhai script execution |
-| **Git Tools** | `g` | Git operations, diff, log, status |
-| **HTTP Client** | `h` | HTTP requests with full method support |
-| **File Tool** | `f` | File operations, search, watch |
-| **Elasticsearch** | `e` | ES cluster management, index operations |
-| **Sysinfo** | `i` | System information gathering |
-
-## Building
-
-### Prerequisites
+### 环境准备
 
 ```bash
-# Rust toolchain
+# Rust 工具链
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-# For cross-compilation
+# 交叉编译工具
 cargo install cross --git https://github.com/cross-rs/cross
 
-# Linux x86_64 static build
+# Linux x86_64 静态编译
 sudo apt install musl-tools
 ```
 
-### Build Commands
+### 编译命令
 
 ```bash
-# Development build
+# 开发构建
 cargo build
 
-# Release build (optimized, stripped)
+# 发布构建 (优化 + 裁剪)
 cargo build --release --bin devtool
 
-# Cross-compile for aarch64
+# 交叉编译 aarch64
 cross build --release --target aarch64-unknown-linux-musl --bin devtool
 
-# Cross-compile for Windows
+# 交叉编译 Windows
 cross build --release --target x86_64-pc-windows-gnu --bin devtool
 
-# Run tests
+# 运行测试
 cargo test --workspace --lib
 
-# Run linter
+# 代码检查
 cargo clippy --workspace -- -D warnings
 ```
 
-### Release
+### 发版流程
 
 ```bash
-# Bump version and create tag
+# 版本号递增并创建 tag
 ./scripts/release.sh patch   # 0.1.0 -> 0.1.1
 ./scripts/release.sh minor   # 0.1.1 -> 0.2.0
 ./scripts/release.sh major   # 0.2.0 -> 1.0.0
 
-# Push tag to trigger GitHub Actions release
+# 推送 tag 触发 GitHub Actions 自动打包
 git push origin v0.1.1
 ```
 
 ## CI/CD
 
-GitHub Actions automatically:
+GitHub Actions 自动化:
 
-- **On PR/push to master**: `cargo check`, `cargo test`, `cargo clippy`
-- **On tag push (`v*`)**: Build for 5 platforms, create GitHub Release with binaries
+- **PR/推送 master**: `cargo check` + `cargo test` + `cargo clippy`
+- **推送 tag (`v*`)**: 5 平台交叉编译 + 创建 GitHub Release + 上传二进制包
 
-## Contributing
+## 参与贡献
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing`)
-3. Commit changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing`)
-5. Open a Pull Request
+1. Fork 本仓库
+2. 创建功能分支 (`git checkout -b feature/牛逼功能`)
+3. 提交代码 (`git commit -m 'feat: 添加牛逼功能'`)
+4. 推送分支 (`git push origin feature/牛逼功能`)
+5. 提交 Pull Request
 
-## License
+## 开源协议
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License - 详见 [LICENSE](LICENSE)
 
 ---
 
 <div align="center">
 
-**Built with Rust** | **Powered by ratatui + axum**
+```
+ ██╗  ██╗██╗   ██╗███╗   ██╗ ██████╗
+ ██║  ██║██║   ██║████╗  ██║██╔════╝
+ ███████║██║   ██║██╔██╗ ██║██║  ███╗
+ ██╔══██║██║   ██║██║╚██╗██║██║   ██║
+ ██║  ██║╚██████╔╝██║ ╚████║╚██████╔╝
+ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝
+```
+
+**Rust 编写 | ratatui + axum 驱动 | 高性能 · 低内存 · 离线可用**
 
 </div>
