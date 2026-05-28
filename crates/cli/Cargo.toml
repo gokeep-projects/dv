@@ -1,0 +1,18 @@
+[package]
+name = "devtool"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "devtool"
+path = "src/main.rs"
+
+[dependencies]
+devtool-core = { path = "../core" }
+devtool-tui = { path = "../tui" }
+devtool-web = { path = "../web" }
+clap.workspace = true
+clap_complete.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tokio.workspace = true

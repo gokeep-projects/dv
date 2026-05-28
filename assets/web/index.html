@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DevTool</title>
+<link rel="stylesheet" href="/assets/css/style.css">
+</head><body>
+<canvas id="particles"></canvas>
+<div class="app">
+  <header class="header">
+    <div class="hl"><span class="logo">&#9670;</span><h1>DevTool</h1><span class="ver">v0.1</span></div>
+    <div class="hr"><span class="dot" id="dot"></span><span id="conn">connected</span><span class="count" id="pcount">0 plugins</span></div>
+  </header>
+  <div class="main">
+    <aside class="sidebar">
+      <div class="sh"><input id="search" placeholder="/ 搜索..." class="search-input" autocomplete="off"></div>
+      <div class="plist" id="plist"></div>
+      <div class="upload-zone" id="uzone"><div class="uin"><span class="ui">&#8682;</span><span>拖拽 .so 上传</span></div><input type="file" id="fupload" accept=".so,.dylib,.dll" hidden></div>
+    </aside>
+    <main class="content">
+      <div class="card" id="dcard"><div class="ch"><h3 id="dname">Select a Plugin</h3><span class="badge" id="dcat"></span></div>
+        <div class="cb"><p class="desc" id="ddesc">Choose a plugin from the sidebar to begin.</p><div class="meta" id="dmeta"></div></div></div>
+      <div class="card"><div class="ch"><h3>Actions</h3></div><div class="cb"><div class="agrid" id="agrid"><span class="placeholder">&#8592; Select a plugin first</span></div></div></div>
+      <div class="card"><div class="ch"><h3>Execute</h3><div class="btns"><button class="btn btn-clear" id="bclear">Clear</button><button class="btn btn-run" id="brun">&#9654; Run</button></div></div>
+        <div class="cb"><div class="io"><div class="iop"><label>INPUT</label><textarea id="input" class="ci" placeholder="输入数据..." rows="4"></textarea></div>
+        <div class="iop"><label>OUTPUT</label><div class="oc"><pre id="output" class="co"></pre><div class="oo" id="overlay">&#8593; Run an action</div></div></div></div></div></div>
+    </main>
+  </div>
+  <footer class="footer"><span id="fmsg">Ready</span></footer>
+  <div class="toasts" id="toasts"></div>
+</div>
+<script src="/assets/js/app.js"></script>
+</body></html>

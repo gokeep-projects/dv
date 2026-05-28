@@ -1,0 +1,13 @@
+[package]
+name = "devtool-tui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+devtool-core = { path = "../core" }
+ratatui.workspace = true
+crossterm.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+serde_json.workspace = true
+serde.workspace = true
