@@ -1,10 +1,10 @@
 [package]
-name = "devtool"
+name = "dv"
 version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "devtool"
+name = "dv"
 path = "src/main.rs"
 
 [dependencies]

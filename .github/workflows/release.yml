@@ -22,28 +22,28 @@ jobs:
           - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
             use_cross: false
-            artifact: devtool-linux-x86_64
+            artifact: dv-linux-x86_64
             install: musl-tools
           # Linux aarch64 musl (static)
           - target: aarch64-unknown-linux-musl
             os: ubuntu-latest
             use_cross: true
-            artifact: devtool-linux-aarch64
+            artifact: dv-linux-aarch64
           # macOS x86_64
           - target: x86_64-apple-darwin
             os: macos-latest
             use_cross: false
-            artifact: devtool-macos-x86_64
+            artifact: dv-macos-x86_64
           # macOS aarch64 (Apple Silicon)
           - target: aarch64-apple-darwin
             os: macos-latest
             use_cross: false
-            artifact: devtool-macos-aarch64
+            artifact: dv-macos-aarch64
           # Windows x86_64 (static)
           - target: x86_64-pc-windows-gnu
             os: ubuntu-latest
             use_cross: true
-            artifact: devtool-windows-x86_64
+            artifact: dv-windows-x86_64
             install: p7zip-full
 
     steps:
@@ -66,19 +66,19 @@ jobs:
 
       - name: Build (native)
         if: ${{ !matrix.use_cross }}
-        run: cargo build --release --target ${{ matrix.target }} --bin devtool
+        run: cargo build --release --target ${{ matrix.target }} --bin dv
 
       - name: Build (cross)
         if: matrix.use_cross
-        run: cross build --release --target ${{ matrix.target }} --bin devtool
+        run: cross build --release --target ${{ matrix.target }} --bin dv
 
       - name: Package binary
         shell: bash
         run: |
           mkdir -p dist
-          BIN_NAME="devtool"
+          BIN_NAME="dv"
           if [[ "${{ matrix.target }}" == *"windows"* ]]; then
-            BIN_NAME="devtool.exe"
+            BIN_NAME="dv.exe"
           fi
           cp "target/${{ matrix.target }}/release/${BIN_NAME}" dist/
           cd dist
@@ -130,11 +130,11 @@ jobs:
             echo ""
             echo "| Platform | Architecture | File |"
             echo "|----------|-------------|------|"
-            echo "| Linux | x86_64 | \`devtool-linux-x86_64.tar.gz\` |"
-            echo "| Linux | aarch64 | \`devtool-linux-aarch64.tar.gz\` |"
-            echo "| macOS | x86_64 | \`devtool-macos-x86_64.tar.gz\` |"
-            echo "| macOS | aarch64 | \`devtool-macos-aarch64.tar.gz\` |"
-            echo "| Windows | x86_64 | \`devtool-windows-x86_64.zip\` |"
+            echo "| Linux | x86_64 | \`dv-linux-x86_64.tar.gz\` |"
+            echo "| Linux | aarch64 | \`dv-linux-aarch64.tar.gz\` |"
+            echo "| macOS | x86_64 | \`dv-macos-x86_64.tar.gz\` |"
+            echo "| macOS | aarch64 | \`dv-macos-aarch64.tar.gz\` |"
+            echo "| Windows | x86_64 | \`dv-windows-x86_64.zip\` |"
           } > CHANGELOG.md
 
           CHANGELOG=$(cat CHANGELOG.md)
