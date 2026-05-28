@@ -36,8 +36,8 @@ pub struct Data {
 
 #[derive(Clone)]
 pub struct SysError {
-    pub service: String, pub message: String,
-    pub severity: ErrorSeverity, pub timestamp: String,
+    pub service: String, pub pid: String, pub path: String,
+    pub message: String, pub severity: ErrorSeverity, pub timestamp: String,
 }
 
 #[derive(Clone, PartialEq)]
@@ -49,6 +49,7 @@ pub struct AppInfo {
     pub cpu: f64, pub mem_kb: u64,
     pub category: AppCategory, pub running: bool,
     pub user: String, pub threads: u32, pub cpu_pct: f64, pub mem_pct: f64,
+    pub service_name: String,
 }
 
 #[derive(Clone, PartialEq)]
@@ -76,18 +77,54 @@ impl Dashboard {
         let mut d = gather();
         d.cpu_pct = pct; d.net_rx_rate = rx; d.net_tx_rate = tx;
         let mut anoms = Vec::new();
-        if pct > 90.0 { anoms.push(format!("🔴 CPU {:.1}% 极高(>90%)", pct)); }
-        else if pct > 70.0 { anoms.push(format!("🟡 CPU {:.1}% 偏高(>70%)", pct)); }
+        // CPU anomaly
+        if pct > 90.0 { anoms.push(format!("CPU {:.1}% 极高(>90%)", pct)); }
+        else if pct > 70.0 { anoms.push(format!("CPU {:.1}% 偏高(>70%)", pct)); }
+        // Memory anomaly
         let mp = if d.mem_total>0{d.mem_used as f64/d.mem_total as f64*100.0}else{0.0};
-        if mp>95.0{anoms.push(format!("🔴 内存 {:.1}% 极高",mp));}else if mp>85.0{anoms.push(format!("🟡 内存 {:.1}% 偏高",mp));}
+        if mp>95.0{anoms.push(format!("内存 {:.1}% 极高(>95%)",mp));}
+        else if mp>85.0{anoms.push(format!("内存 {:.1}% 偏高(>85%)",mp));}
+        // Swap anomaly
         let sp=if d.swap_total>0{d.swap_used as f64/d.swap_total as f64*100.0}else{0.0};
-        if sp>80.0{anoms.push(format!("🔴 Swap {:.1}% 极高",sp));}else if sp>50.0{anoms.push(format!("🟡 Swap {:.1}% 偏高",sp));}
-        if d.load1>d.cpu_cores as f64*3.0{anoms.push(format!("🔴 负载 {:.2} 极高",d.load1));}
+        if sp>80.0{anoms.push(format!("Swap {:.1}% 极高(>80%)",sp));}
+        else if sp>50.0{anoms.push(format!("Swap {:.1}% 偏高(>50%)",sp));}
+        // Load average anomaly
+        if d.load1>d.cpu_cores as f64*3.0{anoms.push(format!("负载 {:.2} 极高({}核)",d.load1,d.cpu_cores));}
+        else if d.load1>d.cpu_cores as f64*2.0{anoms.push(format!("负载 {:.2} 偏高({}核)",d.load1,d.cpu_cores));}
+        // Root partition anomaly
         let rp:f64=d.disks.iter().find(|(d,_,_,_)|d=="/dev/sda2"||d=="/dev/sda1"||d=="/dev/vda1"||d=="/dev/nvme0n1p1"||d=="/").map(|(_,_,_,p)|p.trim_end_matches('%').parse().unwrap_or(0.0)).unwrap_or(0.0);
-        if rp>95.0{anoms.push(format!("🔴 根分区 {:.1}% 极高",rp));}else if rp>80.0{anoms.push(format!("🟡 根分区 {:.1}% 偏高",rp));}
-        for p in d.top_mem.iter().take(5){if p.mem_kb>2*1024*1024{anoms.push(format!("🟡 {} PID{} 内存{}",p.name,p.pid,fmem(p.mem_kb)));}}
-        if d.zombies>10{anoms.push(format!("🔴 僵尸进程 {}个",d.zombies));}else if d.zombies>0{anoms.push(format!("🟡 僵尸进程 {}个",d.zombies));}
-        if d.fd_max>0&&d.fd_cur as f64/d.fd_max as f64>0.8{anoms.push(format!("🟡 FD使用率 {:.1}%",d.fd_cur as f64/d.fd_max as f64*100.0));}
+        if rp>95.0{anoms.push(format!("根分区 {:.1}% 极高(>95%)",rp));}
+        else if rp>80.0{anoms.push(format!("根分区 {:.1}% 偏高(>80%)",rp));}
+        // High memory processes
+        for p in d.top_mem.iter().take(5){
+            if p.mem_kb>4*1024*1024{anoms.push(format!("{} PID:{} 内存:{:.1}GB 极高",p.name,p.pid,p.mem_kb as f64/1048576.0));}
+            else if p.mem_kb>2*1024*1024{anoms.push(format!("{} PID:{} 内存:{:.1}GB 偏高",p.name,p.pid,p.mem_kb as f64/1048576.0));}
+        }
+        // Zombie processes
+        if d.zombies>10{anoms.push(format!("僵尸进程 {}个 极高",d.zombies));}
+        else if d.zombies>0{anoms.push(format!("僵尸进程 {}个",d.zombies));}
+        // FD usage
+        if d.fd_max>0{
+            let fd_pct=d.fd_cur as f64/d.fd_max as f64*100.0;
+            if fd_pct>90.0{anoms.push(format!("FD使用率 {:.1}% 极高",fd_pct));}
+            else if fd_pct>80.0{anoms.push(format!("FD使用率 {:.1}% 偏高",fd_pct));}
+        }
+        // High CPU processes (per-process anomaly)
+        for p in d.top_cpu.iter().take(3){
+            if p.cpu>80.0{anoms.push(format!("{} PID:{} CPU:{:.1}% 极高",p.name,p.pid,p.cpu));}
+        }
+        // Network anomalies: high traffic
+        if d.net_rx_rate>100_000_000.0{anoms.push(format!("入站流量 {:.1}MB/s 偏高",d.net_rx_rate/1_000_000.0));}
+        if d.net_tx_rate>100_000_000.0{anoms.push(format!("出站流量 {:.1}MB/s 偏高",d.net_tx_rate/1_000_000.0));}
+        // Disk I/O anomaly: multiple disks > 90%
+        let high_disks: Vec<&str> = d.disks.iter().filter(|(_,_,_,p)|{
+            p.trim_end_matches('%').parse::<f64>().unwrap_or(0.0) > 90.0
+        }).map(|(n,_,_,_)| n.as_str()).collect();
+        if high_disks.len() > 1 {
+            anoms.push(format!("多磁盘告警: {}", high_disks.join(", ")));
+        }
+        // Process count anomaly
+        if d.procs > 500 { anoms.push(format!("进程数 {} 偏高", d.procs)); }
         d.cpu_min = self.data.cpu_min.min(pct); d.cpu_max = self.data.cpu_max.max(pct);
         d.mem_min = self.data.mem_min.min(d.mem_used).max(1); d.mem_max = self.data.mem_max.max(d.mem_used);
         // Compute per-process CPU% from deltas (CLK_TCK=100, 1s interval → delta_ticks ≈ CPU%)
@@ -346,6 +383,36 @@ fn get_user(uid: u32) -> String {
     uid.to_string()
 }
 
+fn get_service_name(pid: u32, cmd: &str) -> String {
+    // Try systemd: systemctl status PID
+    if let Ok(o) = std::process::Command::new("systemctl").args(["status", &format!("{}.service", pid)]).output() {
+        let text = String::from_utf8_lossy(&o.stdout);
+        for line in text.lines() {
+            let line = line.trim();
+            if line.starts_with("Loaded:") {
+                // Extract service name from "loaded (/lib/systemd/system/xxx.service; ...)"
+                if let Some(start) = line.rfind('/') {
+                    if let Some(end) = line[start..].find(".service") {
+                        return line[start+1..start+end].to_string();
+                    }
+                }
+            }
+        }
+    }
+    // Try reading /proc/PID/cgroup for systemd slice
+    let cgroup = r(&format!("/proc/{}/cgroup", pid));
+    for line in cgroup.lines() {
+        if let Some(idx) = line.find(".service") {
+            let before = &line[..idx];
+            if let Some(slash) = before.rfind('/') {
+                return before[slash+1..].to_string();
+            }
+        }
+    }
+    // Fallback: use cmd name without path
+    cmd.split('/').last().unwrap_or("-").split_whitespace().next().unwrap_or("-").to_string()
+}
+
 fn scan_journal_errors() -> Vec<SysError> {
     let mut errors = Vec::new();
     // Get recent errors from journalctl (last 5 minutes, priority err and above)
@@ -359,19 +426,37 @@ fn scan_journal_errors() -> Vec<SysError> {
             // Parse: "May 27 10:30:15 hostname service[pid]: message"
             let parts: Vec<&str> = line.splitn(6, ' ').collect();
             let ts = if parts.len() >= 3 { format!("{} {} {}", parts[0], parts[1], parts[2]) } else { String::new() };
-            // Find service name (word before [pid]:)
             let rest = parts.get(5).copied().unwrap_or(line);
-            let service = if let Some(bracket) = rest.find('[') {
-                let before = &rest[..bracket];
-                before.rsplit(' ').next().unwrap_or("?").to_string()
-            } else { "?".to_string() };
-            let msg = rest.to_string();
-            let sev = if msg.to_lowercase().contains("critical")||msg.to_lowercase().contains("fatal")||msg.to_lowercase().contains("panic")||msg.to_lowercase().contains("out of memory")||msg.to_lowercase().contains("oom")||msg.to_lowercase().contains("no space") {
+            // Extract service name and pid from "service[pid]:"
+            let (service, pid_str) = if let Some(bracket_start) = rest.find('[') {
+                let svc = rest[..bracket_start].rsplit(' ').next().unwrap_or("?").to_string();
+                let pid_s = if let Some(bracket_end) = rest.find(']') {
+                    rest[bracket_start+1..bracket_end].to_string()
+                } else { String::new() };
+                (svc, pid_s)
+            } else {
+                let svc = rest.split(':').next().unwrap_or("?").trim().to_string();
+                (svc, String::new())
+            };
+            // Extract message after ": "
+            let msg = if let Some(colon) = rest.find(": ") { rest[colon+2..].to_string() } else { rest.to_string() };
+            // Try to find executable path from pid
+            let path = if !pid_str.is_empty() {
+                std::fs::read_link(format!("/proc/{}/exe", pid_str)).ok()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or_else(|| {
+                        // Fallback: read cmdline
+                        std::fs::read_to_string(format!("/proc/{}/cmdline", pid_str))
+                            .ok().map(|c| c.replace('\0', " ").trim().to_string())
+                            .unwrap_or_default()
+                    })
+            } else { String::new() };
+            let sev = if msg.to_lowercase().contains("critical")||msg.to_lowercase().contains("fatal")||msg.to_lowercase().contains("panic")||msg.to_lowercase().contains("out of memory")||msg.to_lowercase().contains("oom-killer")||msg.to_lowercase().contains("no space") {
                 ErrorSeverity::Critical
-            } else if msg.to_lowercase().contains("error")||msg.to_lowercase().contains("fail")||msg.to_lowercase().contains("refused")||msg.to_lowercase().contains("timeout")||msg.to_lowercase().contains("denied") {
+            } else if msg.to_lowercase().contains("error")||msg.to_lowercase().contains("fail")||msg.to_lowercase().contains("refused")||msg.to_lowercase().contains("timeout")||msg.to_lowercase().contains("denied")||msg.to_lowercase().contains("segfault")||msg.to_lowercase().contains("killed") {
                 ErrorSeverity::Error
             } else { ErrorSeverity::Warning };
-            errors.push(SysError { service, message: msg, severity: sev, timestamp: ts });
+            errors.push(SysError { service, pid: pid_str, path, message: msg, severity: sev, timestamp: ts });
         }
     }
     // Also check specific service logs: elasticsearch, nginx, mysql, redis, docker, kafka
@@ -384,7 +469,7 @@ fn scan_journal_errors() -> Vec<SysError> {
                 let sev = if line.to_lowercase().contains("no space")||line.to_lowercase().contains("disk full")||line.to_lowercase().contains("out of memory") { ErrorSeverity::Critical }
                 else { ErrorSeverity::Error };
                 let short_msg = if line.len()>120{format!("{}...",&line[..117])}else{line.to_string()};
-                errors.push(SysError{service:svc.to_string(),message:short_msg,severity:sev,timestamp:String::new()});
+                errors.push(SysError{service:svc.to_string(),pid:String::new(),path:String::new(),message:short_msg,severity:sev,timestamp:String::new()});
             }
         }
     }
@@ -435,7 +520,9 @@ fn scan_apps(ports: &[PortInfo]) -> Vec<AppInfo> {
             let total_cpu = (ut+st) as f64;
             let cpu_pct_val = if start_time > 0 { total_cpu / ((start_time as f64).max(1.0)) * 100.0 } else { 0.0 };
             let mem_pct_val = 0.0; // Will be updated in tick
-            apps.push(AppInfo { name: full_cmd, pid, ports: pid_ports, cpu: total_cpu, mem_kb: mem, category: cat, running: true, user: user_name, threads: threads2, cpu_pct: cpu_pct_val, mem_pct: mem_pct_val });
+            // Try to get systemd service name
+            let service_name = get_service_name(pid, &cmd);
+            apps.push(AppInfo { name: full_cmd, pid, ports: pid_ports, cpu: total_cpu, mem_kb: mem, category: cat, running: true, user: user_name, threads: threads2, cpu_pct: cpu_pct_val, mem_pct: mem_pct_val, service_name });
         }
     }
     apps.retain(|a| !matches!(a.category, AppCategory::Container));

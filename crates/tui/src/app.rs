@@ -167,13 +167,14 @@ impl App {
         // App Status TABLE with borders
         let ab2=Block::default().title(Line::from(vec![Span::styled(" \u{25b8} ",Style::default().fg(t.accent).bold()),da("应用状态"),Span::styled(" (非docker)",Style::default().fg(t.text_muted))])).borders(Borders::ALL).border_type(BorderType::Rounded).border_style(Style::default().fg(t.border)).style(Style::default().bg(t.surface));
         f.render_widget(ab2.clone(),apps_a);
-        let widths=[Constraint::Length(6),Constraint::Length(8),Constraint::Length(6),Constraint::Length(7),Constraint::Length(4),Constraint::Length(8),Constraint::Length(5),Constraint::Min(35)];
-        let header=Row::new(vec![Cell::from("PID"),Cell::from("PORTS"),Cell::from("CPU%"),Cell::from("MEM"),Cell::from("THR"),Cell::from("USER"),Cell::from("TYPE"),Cell::from("COMMAND")]).style(Style::default().fg(t.primary).bold());
+        let widths=[Constraint::Length(6),Constraint::Length(7),Constraint::Length(6),Constraint::Length(7),Constraint::Length(4),Constraint::Length(8),Constraint::Length(5),Constraint::Length(14),Constraint::Min(30)];
+        let header=Row::new(vec![Cell::from("PID"),Cell::from("PORTS"),Cell::from("CPU%"),Cell::from("MEM"),Cell::from("THR"),Cell::from("USER"),Cell::from("TYPE"),Cell::from("SERVICE"),Cell::from("COMMAND")]).style(Style::default().fg(t.primary).bold());
         let rows:Vec<Row>=d.apps.iter().skip(self.app_scroll).map(|a2|{
             let sc2=match a2.category{AppCategory::Java=>Style::default().fg(t.accent).bold(),AppCategory::WebServer=>Style::default().fg(t.secondary).bold(),AppCategory::Database=>Style::default().fg(t.warning).bold(),AppCategory::Cache=>Style::default().fg(t.success).bold(),AppCategory::Search=>Style::default().fg(t.primary).bold(),AppCategory::MessageQueue=>Style::default().fg(t.warning),AppCategory::Container=>Style::default().fg(t.text_dim),AppCategory::Other=>Style::default().fg(t.text_muted)};
             let lb=match a2.category{AppCategory::Java=>"Java",AppCategory::WebServer=>"Web",AppCategory::Database=>"DB",AppCategory::Cache=>"Cache",AppCategory::MessageQueue=>"MQ",AppCategory::Search=>"Search",AppCategory::Container=>"CTR",AppCategory::Other=>"?"};
             let ports_str = if a2.ports.is_empty(){"-".into()}else{a2.ports.iter().map(|p|p.to_string()).collect::<Vec<_>>().join(",")};
-            Row::new(vec![Cell::from(format!("{}",a2.pid)),Cell::from(ports_str),Cell::from(format!("{:.1}%",a2.cpu_pct)),Cell::from(fmt_kb(a2.mem_kb)),Cell::from(format!("{}",a2.threads)),Cell::from(a2.user.clone()),Cell::from(lb),Cell::from(trunc(&a2.name,80))]).style(sc2)
+            let svc = if a2.service_name.is_empty() || a2.service_name == "-" { "-".to_string() } else { a2.service_name.clone() };
+            Row::new(vec![Cell::from(format!("{}",a2.pid)),Cell::from(ports_str),Cell::from(format!("{:.1}%",a2.cpu_pct)),Cell::from(fmt_kb(a2.mem_kb)),Cell::from(format!("{}",a2.threads)),Cell::from(a2.user.clone()),Cell::from(lb),Cell::from(trunc(&svc,14)),Cell::from(trunc(&a2.name,70))]).style(sc2)
         }).collect();
         f.render_stateful_widget(Table::new(rows,widths).header(header),ab2.inner(apps_a).inner(Margin::new(0,0)),&mut TableState::default());
         // Error Log + Anomaly
@@ -181,8 +182,11 @@ impl App {
         let eb=Block::default().title(Line::from(vec![Span::styled(" \u{25c8} ",Style::default().fg(t.error).bold()),Span::styled(format!("系统错误日志 ({})",d.sys_errors.len()),Style::default().fg(t.error).bold())])).borders(Borders::ALL).border_type(BorderType::Rounded).border_style(Style::default().fg(t.error)).style(Style::default().bg(t.surface));
         f.render_widget(eb.clone(),errs);
         let mut el:Vec<ListItem>=d.sys_errors.iter().map(|e|{
-            let(icon,styl)=match e.severity{ErrorSeverity::Critical=>("🔴",Style::default().fg(t.error).bold()),ErrorSeverity::Error=>("🟡",Style::default().fg(t.warning)),ErrorSeverity::Warning=>("⚪",Style::default().fg(t.text_dim))};
-            ListItem::new(format!(" {} {:<15} {}",icon,e.service,trunc(&e.message,70))).style(styl)
+            let(icon,styl)=match e.severity{ErrorSeverity::Critical=>("\u{25cf}",Style::default().fg(t.error).bold()),ErrorSeverity::Error=>("\u{25cb}",Style::default().fg(t.warning)),ErrorSeverity::Warning=>("\u{25cb}",Style::default().fg(t.text_dim))};
+            let pid_str = if e.pid.is_empty() { String::new() } else { format!(" [{}]", e.pid) };
+            let path_str = if e.path.is_empty() { String::new() } else { format!(" {}", trunc(&e.path, 30)) };
+            let detail = format!(" {} {}{}{}: {}", icon, e.service, pid_str, path_str, e.message);
+            ListItem::new(trunc(&detail, 120)).style(styl)
         }).collect();
         if el.is_empty(){el.push(ListItem::new("  ✓ 未检测到系统错误").style(Style::default().fg(t.success)));}
         f.render_stateful_widget(List::new(el),eb.inner(errs).inner(Margin::new(0,0)),&mut ListState::default());
@@ -190,7 +194,11 @@ impl App {
         let ac2=if d.anomalies.is_empty(){t.success}else{t.error};
         let ab3=Block::default().title(Span::styled(at2,Style::default().fg(ac2).bold())).borders(Borders::ALL).border_type(BorderType::Rounded).border_style(Style::default().fg(if d.anomalies.is_empty(){t.border}else{t.error})).style(Style::default().bg(t.surface));
         f.render_widget(ab3.clone(),anom);
-        let ai3:Vec<ListItem>=if d.anomalies.is_empty(){vec![ListItem::new("  ✓ 未检测到异常").style(Style::default().fg(t.success))]}else{d.anomalies.iter().map(|s|ListItem::new(format!("  {}",s)).style(Style::default().fg(t.error))).collect()};
+        let ai3:Vec<ListItem>=if d.anomalies.is_empty(){vec![ListItem::new("  \u{2713} 未检测到异常").style(Style::default().fg(t.success))]}else{d.anomalies.iter().enumerate().map(|(i,s)|{
+            let icon = if i < 3 { "\u{25cf}" } else { "\u{25cb}" };
+            let styl = if s.contains("极高") || s.contains("极高(") { Style::default().fg(t.error).bold() } else if s.contains("偏高") { Style::default().fg(t.warning) } else { Style::default().fg(t.text) };
+            ListItem::new(format!(" {} {}", icon, s)).style(styl)
+        }).collect()};
         f.render_stateful_widget(List::new(ai3),ab3.inner(anom).inner(Margin::new(0,0)),&mut ListState::default());
         if !self.output_buf.is_empty(){let oa=centered_rect(70,60,f.area());f.render_widget(Clear,oa);let ob=Block::default().title(Span::styled(" 输出 ",Style::default().fg(t.success).bold())).borders(Borders::ALL).border_type(BorderType::Rounded).border_style(Style::default().fg(t.success)).style(Style::default().bg(t.surface_alt));f.render_widget(Paragraph::new(if self.output_err{Span::styled(&self.output_buf,Style::default().fg(t.error))}else{Span::styled(&self.output_buf,Style::default().fg(t.text))}).wrap(Wrap{trim:false}).block(ob),oa);}
     }

@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 
 jobs:
   build:
@@ -17,72 +18,150 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
+          # Linux x86_64 musl (static)
           - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
+            use_cross: false
+            artifact: devtool-linux-x86_64
             install: musl-tools
-          - target: aarch64-unknown-linux-gnu
+          # Linux aarch64 musl (static)
+          - target: aarch64-unknown-linux-musl
             os: ubuntu-latest
+            use_cross: true
+            artifact: devtool-linux-aarch64
+          # Linux mips64el musl (static)
+          - target: mips64el-unknown-linux-muslabi64
+            os: ubuntu-latest
+            use_cross: true
+            artifact: devtool-linux-mips64el
+          # Linux loongarch64 (static)
+          - target: loongarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            use_cross: true
+            artifact: devtool-linux-loongarch64
+          # macOS x86_64
           - target: x86_64-apple-darwin
             os: macos-latest
+            use_cross: false
+            artifact: devtool-macos-x86_64
+          # macOS aarch64 (Apple Silicon)
           - target: aarch64-apple-darwin
             os: macos-latest
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
+            use_cross: false
+            artifact: devtool-macos-aarch64
+          # Windows x86_64 (static)
+          - target: x86_64-pc-windows-gnu
+            os: ubuntu-latest
+            use_cross: true
+            artifact: devtool-windows-x86_64
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
 
-      - name: Install dependencies (Linux)
-        if: runner.os == 'Linux' && matrix.install
+      - name: Install cross
+        if: matrix.use_cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Install dependencies
+        if: matrix.install
         run: sudo apt-get update && sudo apt-get install -y ${{ matrix.install }}
 
-      - name: Build release binary
-        run: cargo build --release --target ${{ matrix.target }}
+      - name: Build (native)
+        if: ${{ !matrix.use_cross }}
+        run: cargo build --release --target ${{ matrix.target }} --bin devtool
 
-      - name: Prepare artifacts (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: |
-          mkdir -p release/plugins
-          cp target/${{ matrix.target }}/release/devtool release/
-          cp target/${{ matrix.target }}/release/libdevtool_plugin_*.so release/plugins/ 2>/dev/null || true
-          cp target/${{ matrix.target }}/release/libdevtool_plugin_*.dylib release/plugins/ 2>/dev/null || true
+      - name: Build (cross)
+        if: matrix.use_cross
+        run: cross build --release --target ${{ matrix.target }} --bin devtool
 
-      - name: Prepare artifacts (Windows)
-        if: runner.os == 'Windows'
+      - name: Package binary
+        shell: bash
         run: |
-          mkdir release\plugins
-          copy target\${{ matrix.target }}\release\devtool.exe release\
-          copy target\${{ matrix.target }}\release\devtool_plugin_*.dll release\plugins\
-
-      - name: Create archive (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: |
-          cd release
-          tar -czf ../devtool-${{ github.ref_name }}-${{ matrix.target }}.tar.gz devtool plugins/
-
-      - name: Create archive (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          cd release
-          7z a -tzip ../devtool-${{ github.ref_name }}-${{ matrix.target }}.zip devtool.exe plugins/
+          mkdir -p dist
+          BIN_NAME="devtool"
+          if [[ "${{ matrix.target }}" == *"windows"* ]]; then
+            BIN_NAME="devtool.exe"
+          fi
+          cp "target/${{ matrix.target }}/release/${BIN_NAME}" dist/
+          cd dist
+          if [[ "${{ matrix.target }}" == *"windows"* ]]; then
+            7z a -tzip "../${{ matrix.artifact }}.zip" *
+          else
+            tar czf "../${{ matrix.artifact }}.tar.gz" *
+          fi
+          cd ..
+          ls -lh ${{ matrix.artifact }}.*
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: devtool-${{ matrix.target }}
-          path: devtool-*.tar.gz
-          if-no-files-found: ignore
+          name: ${{ matrix.artifact }}
+          path: |
+            ${{ matrix.artifact }}.tar.gz
+            ${{ matrix.artifact }}.zip
+          if-no-files-found: warn
+
+  changelog:
+    name: Generate Changelog
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+
+          {
+            echo "## What's Changed"
+            echo ""
+            if [ -z "$PREV_TAG" ]; then
+              git log --pretty=format:"- %s (%h)" --reverse
+            else
+              git log ${PREV_TAG}..${CURRENT_TAG} --pretty=format:"- %s (%h)"
+            fi
+            echo ""
+            echo ""
+            echo "## Downloads"
+            echo ""
+            echo "| Platform | Architecture | File |"
+            echo "|----------|-------------|------|"
+            echo "| Linux | x86_64 | \`devtool-linux-x86_64.tar.gz\` |"
+            echo "| Linux | aarch64 | \`devtool-linux-aarch64.tar.gz\` |"
+            echo "| Linux | mips64el | \`devtool-linux-mips64el.tar.gz\` |"
+            echo "| Linux | loongarch64 | \`devtool-linux-loongarch64.tar.gz\` |"
+            echo "| macOS | x86_64 | \`devtool-macos-x86_64.tar.gz\` |"
+            echo "| macOS | aarch64 | \`devtool-macos-aarch64.tar.gz\` |"
+            echo "| Windows | x86_64 | \`devtool-windows-x86_64.zip\` |"
+          } > CHANGELOG.md
+
+          CHANGELOG=$(cat CHANGELOG.md)
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Upload changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: CHANGELOG.md
 
   release:
     name: Create GitHub Release
-    needs: build
+    needs: [build, changelog]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
@@ -93,12 +172,19 @@ jobs:
         with:
           path: artifacts
 
-      - name: Display structure
-        run: ls -R artifacts/
+      - name: Collect release files
+        run: |
+          mkdir -p release_files
+          find artifacts -name "*.tar.gz" -exec cp {} release_files/ \;
+          find artifacts -name "*.zip" -exec cp {} release_files/ \;
+          ls -lh release_files/
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**/*.tar.gz
+          files: release_files/*
+          body: ${{ needs.changelog.outputs.changelog }}
           fail_on_unmatched_files: false
-          generate_release_notes: true
+          generate_release_notes: false
+          draft: false
+          prerelease: false
