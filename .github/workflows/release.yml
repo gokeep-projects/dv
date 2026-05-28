@@ -29,16 +29,6 @@ jobs:
             os: ubuntu-latest
             use_cross: true
             artifact: devtool-linux-aarch64
-          # Linux mips64el musl (static)
-          - target: mips64el-unknown-linux-muslabi64
-            os: ubuntu-latest
-            use_cross: true
-            artifact: devtool-linux-mips64el
-          # Linux loongarch64 (static)
-          - target: loongarch64-unknown-linux-gnu
-            os: ubuntu-latest
-            use_cross: true
-            artifact: devtool-linux-loongarch64
           # macOS x86_64
           - target: x86_64-apple-darwin
             os: macos-latest
@@ -54,6 +44,7 @@ jobs:
             os: ubuntu-latest
             use_cross: true
             artifact: devtool-windows-x86_64
+            install: p7zip-full
 
     steps:
       - uses: actions/checkout@v4
@@ -141,8 +132,6 @@ jobs:
             echo "|----------|-------------|------|"
             echo "| Linux | x86_64 | \`devtool-linux-x86_64.tar.gz\` |"
             echo "| Linux | aarch64 | \`devtool-linux-aarch64.tar.gz\` |"
-            echo "| Linux | mips64el | \`devtool-linux-mips64el.tar.gz\` |"
-            echo "| Linux | loongarch64 | \`devtool-linux-loongarch64.tar.gz\` |"
             echo "| macOS | x86_64 | \`devtool-macos-x86_64.tar.gz\` |"
             echo "| macOS | aarch64 | \`devtool-macos-aarch64.tar.gz\` |"
             echo "| Windows | x86_64 | \`devtool-windows-x86_64.zip\` |"
