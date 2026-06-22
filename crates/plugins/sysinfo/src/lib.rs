@@ -1,7 +1,6 @@
 use devtool_core::error::{PluginError, PluginResult};
 use devtool_core::plugin::Plugin;
 use devtool_core::types::*;
-use std::fs;
 
 struct SysinfoPlugin;
 

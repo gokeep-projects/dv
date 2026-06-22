@@ -9,7 +9,6 @@
 <body>
 <div class="mesh-bg"></div>
 <canvas id="particles"></canvas>
-<div class="scanline"></div>
 <div class="app">
   <header class="topbar">
     <div class="topbar-l">
@@ -31,84 +30,177 @@
       <span class="topbar-clock" id="clock">--:--:--</span>
     </div>
   </header>
+
   <main class="workspace">
     <section class="panel active" id="panel-dashboard">
-      <div class="metrics-row">
-        <div class="metric-card mc-cpu">
-          <div class="mc-header"><span class="mc-icon">◉</span><span class="mc-label">CPU</span><span class="mc-badge" id="cpu-badge">0%</span></div>
-          <div class="mc-body">
-            <div class="donut"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--border)" stroke-width="5"/><circle id="cpu-ring" cx="40" cy="40" r="34" fill="none" stroke="url(#gCpu)" stroke-width="5" stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="213.6" transform="rotate(-90 40 40)"/><defs><linearGradient id="gCpu"><stop offset="0%" stop-color="var(--cyan)"/><stop offset="100%" stop-color="var(--primary)"/></linearGradient></defs></svg><div class="donut-val"><span id="cpu-pct">0</span><small>%</small></div></div>
-            <div class="mc-detail"><div class="mc-row"><span>1m</span><b id="d-load1">0</b></div><div class="mc-row"><span>5m</span><b id="d-load5">0</b></div><div class="mc-row"><span>15m</span><b id="d-load15">0</b></div></div>
+      <!-- Row 1: 4 metric cards + alert spanning 2 rows -->
+      <div class="dash-row1">
+        <!-- CPU -->
+        <div class="mcard">
+          <div class="mcard-head"><span class="mcard-icon">◉</span><span class="mcard-label">CPU</span><span class="mcard-badge" id="cpu-badge">0%</span></div>
+          <div class="mcard-body">
+            <div class="mcard-left">
+              <div class="donut"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--border)" stroke-width="5"/><circle id="cpu-ring" cx="40" cy="40" r="34" fill="none" stroke="url(#gCpu)" stroke-width="5" stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="213.6" transform="rotate(-90 40 40)"/><defs><linearGradient id="gCpu"><stop offset="0%" stop-color="var(--cyan)"/><stop offset="100%" stop-color="var(--primary)"/></linearGradient></defs></svg><div class="donut-val"><span id="cpu-pct">0</span><small>%</small></div></div>
+            </div>
+            <div class="mcard-right">
+              <div class="mcard-kv"><span>型号</span><span id="cpu-model">—</span></div>
+              <div class="mcard-kv"><span>频率</span><span id="cpu-mhz">—</span></div>
+              <div class="mcard-kv"><span>核心</span><span id="cpu-cores">—</span></div>
+              <div class="mcard-kv"><span>1分钟</span><span id="d-load1">0</span></div>
+              <div class="mcard-kv"><span>5分钟</span><span id="d-load5">0</span></div>
+              <div class="mcard-kv"><span>15分钟</span><span id="d-load15">0</span></div>
+            </div>
           </div>
           <div class="core-strip" id="core-strip"></div>
+          <div class="sparkline" id="cpu-spark"></div>
         </div>
-        <div class="metric-card mc-mem">
-          <div class="mc-header"><span class="mc-icon">▣</span><span class="mc-label">内存</span><span class="mc-badge" id="mem-badge">0%</span></div>
-          <div class="mc-body">
-            <div class="donut"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--border)" stroke-width="5"/><circle id="mem-ring" cx="40" cy="40" r="34" fill="none" stroke="url(#gMem)" stroke-width="5" stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="213.6" transform="rotate(-90 40 40)"/><defs><linearGradient id="gMem"><stop offset="0%" stop-color="var(--purple)"/><stop offset="100%" stop-color="var(--rose)"/></linearGradient></defs></svg><div class="donut-val"><span id="mem-pct">0</span><small>%</small></div></div>
-            <div class="mc-detail"><div class="mc-row"><span>已用</span><b id="mem-used">0</b></div><div class="mc-row"><span>总计</span><b id="mem-total">0</b></div><div class="mc-row"><span>缓存</span><b id="mem-cached">0</b></div><div class="mc-row"><span>Swap</span><b id="mem-swap">0</b></div></div>
+
+        <!-- Memory -->
+        <div class="mcard">
+          <div class="mcard-head"><span class="mcard-icon">▣</span><span class="mcard-label">内存</span><span class="mcard-badge" id="mem-badge">0%</span></div>
+          <div class="mcard-body">
+            <div class="mcard-left">
+              <div class="donut"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--border)" stroke-width="5"/><circle id="mem-ring" cx="40" cy="40" r="34" fill="none" stroke="url(#gMem)" stroke-width="5" stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="213.6" transform="rotate(-90 40 40)"/><defs><linearGradient id="gMem"><stop offset="0%" stop-color="var(--purple)"/><stop offset="100%" stop-color="var(--rose)"/></linearGradient></defs></svg><div class="donut-val"><span id="mem-pct">0</span><small>%</small></div></div>
+            </div>
+            <div class="mcard-right">
+              <div class="mcard-kv"><span>总计</span><span id="mem-total">0</span></div>
+              <div class="mcard-kv"><span>已用</span><span id="mem-used">0</span></div>
+              <div class="mcard-kv"><span>可用</span><span id="mem-avail">0</span></div>
+              <div class="mcard-kv"><span>缓存</span><span id="mem-cached">0</span></div>
+              <div class="mcard-kv"><span>缓冲</span><span id="mem-buffers">0</span></div>
+              <div class="mcard-kv"><span>Swap</span><span id="mem-swap">0</span></div>
+            </div>
           </div>
           <div class="mem-bar2"><div class="mem-fill" id="mem-fill"></div><div class="swap-fill" id="swap-fill"></div></div>
+          <div class="sparkline" id="mem-spark"></div>
         </div>
-        <div class="metric-card mc-disk">
-          <div class="mc-header"><span class="mc-icon">◎</span><span class="mc-label">磁盘</span><span class="mc-badge" id="disk-badge">—</span></div>
-          <div class="mc-body" id="disk-body"><div class="mc-empty">加载中</div></div>
-          <div class="mc-footer"><span>R: <b id="disk-r">0</b></span><span>W: <b id="disk-w">0</b></span></div>
+
+        <!-- Disk -->
+        <div class="mcard">
+          <div class="mcard-head"><span class="mcard-icon">◎</span><span class="mcard-label">磁盘</span><span class="mcard-badge" id="disk-badge">—</span></div>
+          <div class="mcard-body mcard-body-col">
+            <div class="mcard-kv"><span>读取</span><span id="disk-r">0</span></div>
+            <div class="mcard-kv"><span>写入</span><span id="disk-w">0</span></div>
+            <div id="disk-list"></div>
+          </div>
         </div>
-        <div class="metric-card mc-net">
-          <div class="mc-header"><span class="mc-icon">⊕</span><span class="mc-label">网络</span><span class="mc-badge" id="net-badge">—</span></div>
-          <div class="mc-body" id="net-body"><div class="mc-empty">加载中</div></div>
-          <div class="mc-footer" id="net-ips">—</div>
+
+        <!-- Network -->
+        <div class="mcard">
+          <div class="mcard-head"><span class="mcard-icon">⊕</span><span class="mcard-label">网络</span><span class="mcard-badge" id="net-badge">—</span></div>
+          <div class="mcard-body mcard-body-col">
+            <div id="net-list"></div>
+            <div class="mcard-kv"><span>IP</span><span id="net-ips">—</span></div>
+          </div>
         </div>
-        <div class="metric-card mc-alert">
-          <div class="mc-header"><span class="mc-icon">⚠</span><span class="mc-label">告警</span><span class="mc-badge mc-badge-ok" id="alert-badge">正常</span></div>
-          <div class="mc-body scroll" id="alert-body"><div class="mc-ok">✓ 系统正常</div></div>
+
+      </div>
+
+      <!-- Alert full-width section -->
+      <div class="alert-section">
+        <div class="alert-header"><span class="mcard-icon">⚠</span><span class="alert-title">异常检测</span><span class="mcard-badge mcard-badge-ok" id="alert-badge">正常</span></div>
+        <div class="alert-body">
+          <div class="alert-grid">
+            <div class="alert-col">
+              <div class="alert-col-title">CPU / 负载</div>
+              <div id="alert-cpu"><div class="mcard-ok">✓ 正常</div></div>
+            </div>
+            <div class="alert-col">
+              <div class="alert-col-title">内存 / Swap</div>
+              <div id="alert-mem"><div class="mcard-ok">✓ 正常</div></div>
+            </div>
+            <div class="alert-col">
+              <div class="alert-col-title">磁盘 / FD</div>
+              <div id="alert-disk"><div class="mcard-ok">✓ 正常</div></div>
+            </div>
+            <div class="alert-col">
+              <div class="alert-col-title">进程 / 僵尸</div>
+              <div id="alert-proc"><div class="mcard-ok">✓ 正常</div></div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="data-grid">
-        <div class="data-card"><div class="dc-header"><span class="dc-icon">▬</span><span>监听端口</span><span class="dc-count" id="port-count">0</span></div><div class="dc-body scroll" id="port-table"></div></div>
-        <div class="data-card"><div class="dc-header"><span class="dc-icon">▲</span><span>CPU Top</span></div><div class="dc-body scroll" id="cpu-top-table"></div></div>
-        <div class="data-card"><div class="dc-header"><span class="dc-icon">▼</span><span>内存 Top</span></div><div class="dc-body scroll" id="mem-top-table"></div></div>
-        <div class="data-card dc-wide"><div class="dc-header"><span class="dc-icon">▦</span><span>应用服务</span><span class="dc-count" id="app-count">0</span></div><div class="dc-body scroll" id="app-table"></div></div>
-        <div class="data-card dc-wide"><div class="dc-header"><span class="dc-icon">⚡</span><span>系统日志</span><span class="dc-count" id="err-count">0</span></div><div class="dc-body scroll" id="err-table"></div></div>
+
+      <!-- Row 2: data tables -->
+      <div class="dash-row2">
+        <div class="dcard">
+          <div class="dcard-head"><span>监听端口</span><span class="dcard-count" id="port-count">0</span></div>
+          <div class="dcard-body scroll" id="port-table"></div>
+        </div>
+        <div class="dcard">
+          <div class="dcard-head"><span>CPU Top 进程</span></div>
+          <div class="dcard-body scroll" id="cpu-top-table"></div>
+        </div>
+        <div class="dcard">
+          <div class="dcard-head"><span>内存 Top 进程</span></div>
+          <div class="dcard-body scroll" id="mem-top-table"></div>
+        </div>
+      </div>
+
+      <!-- Row 3: apps + errors full width -->
+      <div class="dash-row3">
+        <div class="dcard dcard-wide">
+          <div class="dcard-head"><span>应用服务</span><span class="dcard-count" id="app-count">0</span></div>
+          <div class="dcard-body scroll" id="app-table"></div>
+        </div>
+        <div class="dcard dcard-wide">
+          <div class="dcard-head"><span>系统日志</span><span class="dcard-count" id="err-count">0</span></div>
+          <div class="dcard-body scroll" id="err-table"></div>
+        </div>
       </div>
     </section>
+
+    <!-- Plugins -->
     <section class="panel" id="panel-plugins">
       <div class="split-layout">
-        <aside class="split-side"><div class="side-search"><input id="p-search" placeholder="搜索插件..."></div><div class="side-list" id="p-list"></div><div class="side-upload" id="upload-zone"><span>⊕ 上传 .so</span><input type="file" id="file-input" accept=".so,.dylib,.dll" hidden></div></aside>
+        <aside class="split-side">
+          <div class="side-search"><input id="p-search" placeholder="搜索插件..."></div>
+          <div class="side-list" id="p-list"></div>
+          <div class="side-upload" id="upload-zone"><span>⊕ 上传 .so</span><input type="file" id="file-input" accept=".so,.dylib,.dll" hidden></div>
+        </aside>
         <div class="split-main">
-          <div class="data-card"><div class="dc-header"><span id="p-name">选择插件</span><span class="dc-tag" id="p-cat"></span></div><div class="dc-body"><p class="desc" id="p-desc">从左侧选择</p><div class="meta-row" id="p-meta"></div></div></div>
-          <div class="data-card"><div class="dc-header">操作</div><div class="dc-body"><div class="act-grid" id="act-grid"><span class="mc-empty">请选择插件</span></div></div></div>
-          <div class="data-card"><div class="dc-header"><span>执行</span><div class="btn-row"><button class="btn btn-ghost" id="btn-clear">清空</button><button class="btn btn-primary" id="btn-run">▶ 运行</button></div></div><div class="dc-body"><div class="io-split"><div class="io-in"><label>输入</label><textarea id="p-input" rows="5" placeholder="输入数据..."></textarea></div><div class="io-out"><label>输出</label><div class="out-wrap"><pre id="p-output" class="out-pre"></pre><div class="out-ph" id="out-ph">点击运行</div></div></div></div></div></div>
+          <div class="dcard"><div class="dcard-head"><span id="p-name">选择插件</span><span class="dcard-tag" id="p-cat"></span></div><div class="dcard-body"><p class="desc" id="p-desc">从左侧选择</p><div class="meta-row" id="p-meta"></div></div></div>
+          <div class="dcard"><div class="dcard-head">操作</div><div class="dcard-body"><div class="act-grid" id="act-grid"><span class="mcard-empty">请选择插件</span></div></div></div>
+          <div class="dcard">
+            <div class="dcard-head"><span>执行</span><div class="btn-row"><button class="btn btn-ghost" id="btn-clear">清空</button><button class="btn btn-primary" id="btn-run">▶ 运行</button></div></div>
+            <div class="dcard-body"><div class="io-split"><div class="io-in"><label>输入</label><textarea id="p-input" rows="5" placeholder="输入数据..."></textarea></div><div class="io-out"><label>输出</label><div class="out-wrap"><pre id="p-output" class="out-pre"></pre><div class="out-ph" id="out-ph">点击运行</div></div></div></div></div>
+          </div>
         </div>
       </div>
     </section>
+
+    <!-- Docker -->
     <section class="panel" id="panel-docker">
       <div class="docker-wrap">
         <div class="docker-tabs"><button class="dtab active" data-dt="containers">容器</button><button class="dtab" data-dt="compose">Compose</button><button class="dtab" data-dt="images">镜像</button></div>
         <div class="docker-panels">
-          <div class="dtp active" id="dt-containers"><div class="data-card"><div class="dc-header"><span>容器</span><button class="btn btn-ghost btn-sm" onclick="D.refresh()">刷新</button></div><div class="dc-body scroll" id="d-containers"><div class="mc-empty">加载中</div></div></div></div>
-          <div class="dtp" id="dt-compose"><div class="data-card"><div class="dc-header"><span>Compose</span><button class="btn btn-ghost btn-sm" onclick="D.loadCompose()">刷新</button></div><div class="dc-body scroll" id="d-compose"><div class="mc-empty">加载中</div></div></div></div>
-          <div class="dtp" id="dt-images"><div class="data-card"><div class="dc-header"><span>镜像</span></div><div class="dc-body scroll" id="d-images"><div class="mc-empty">加载中</div></div></div></div>
-          <div class="data-card"><div class="dc-header"><span>输出</span></div><div class="dc-body"><pre class="out-pre" id="d-output" style="max-height:220px">选择容器查看详情</pre></div></div>
+          <div class="dtp active" id="dt-containers"><div class="dcard"><div class="dcard-head"><span>容器</span><button class="btn btn-ghost btn-sm" onclick="D.refresh()">刷新</button></div><div class="dcard-body scroll" id="d-containers"><div class="mcard-empty">加载中</div></div></div></div>
+          <div class="dtp" id="dt-compose"><div class="dcard"><div class="dcard-head"><span>Compose</span><button class="btn btn-ghost btn-sm" onclick="D.loadCompose()">刷新</button></div><div class="dcard-body scroll" id="d-compose"><div class="mcard-empty">加载中</div></div></div></div>
+          <div class="dtp" id="dt-images"><div class="dcard"><div class="dcard-head"><span>镜像</span></div><div class="dcard-body scroll" id="d-images"><div class="mcard-empty">加载中</div></div></div></div>
+          <div class="dcard"><div class="dcard-head"><span>输出</span></div><div class="dcard-body"><pre class="out-pre" id="d-output" style="max-height:220px">选择容器查看详情</pre></div></div>
         </div>
       </div>
     </section>
+
+    <!-- Middleware -->
     <section class="panel" id="panel-middleware">
       <div class="split-layout">
         <aside class="split-side mw-side"><div class="side-label">类型</div><div id="mw-types"></div><button class="btn btn-cyan btn-sm" style="margin-top:8px;width:100%" onclick="MW.discover()">⊕ 自动发现</button></aside>
         <div class="split-main">
-          <div class="data-card"><div class="dc-header"><span id="mw-title">选择类型</span><div class="btn-row" id="mw-acts"></div></div><div class="dc-body scroll" id="mw-content"><div class="mc-empty">选择中间件</div></div></div>
-          <div class="data-card"><div class="dc-header"><span>连接</span><button class="btn btn-ghost btn-sm" id="mw-add-btn" style="display:none" onclick="MW.showAdd()">+ 添加</button></div><div class="dc-body scroll" id="mw-conn"><div class="mc-empty">暂无</div></div></div>
-          <div class="data-card"><div class="dc-header"><span>CLI</span></div><div class="dc-body"><div class="cli-row"><input id="mw-cli" class="cli-input" placeholder="命令..."><button class="btn btn-primary btn-sm" onclick="MW.runCli()">执行</button></div><pre class="out-pre" id="mw-output" style="margin-top:6px;max-height:180px">等待命令...</pre></div></div>
+          <div class="dcard"><div class="dcard-head"><span id="mw-title">选择类型</span><div class="btn-row" id="mw-acts"></div></div><div class="dcard-body scroll" id="mw-content"><div class="mcard-empty">选择中间件</div></div></div>
+          <div class="dcard"><div class="dcard-head"><span>连接</span><button class="btn btn-ghost btn-sm" id="mw-add-btn" style="display:none" onclick="MW.showAdd()">+ 添加</button></div><div class="dcard-body scroll" id="mw-conn"><div class="mcard-empty">暂无</div></div></div>
+          <div class="dcard"><div class="dcard-head"><span>CLI</span></div><div class="dcard-body"><div class="cli-row"><input id="mw-cli" class="cli-input" placeholder="命令..."><button class="btn btn-primary btn-sm" onclick="MW.runCli()">执行</button></div><pre class="out-pre" id="mw-output" style="margin-top:6px;max-height:180px">等待命令...</pre></div></div>
         </div>
       </div>
     </section>
   </main>
-  <footer class="bottombar"><span id="footer-info">就绪</span><span id="footer-right"><span id="footer-time">--:--:--</span></span></footer>
+
+  <footer class="bottombar"><span id="footer-info">就绪</span><span id="footer-time">--:--:--</span></footer>
 </div>
+
 <div id="toasts"></div>
 <div class="modal-bg" id="modal-bg" style="display:none"><div class="modal"><div class="modal-top"><span id="modal-title">添加</span><button class="modal-x" onclick="closeModal()">✕</button></div><div class="modal-mid" id="modal-body"></div><div class="modal-bot"><button class="btn btn-ghost" onclick="closeModal()">取消</button><button class="btn btn-primary" id="modal-save">保存</button></div></div></div>
+
 <script src="/assets/js/app.js"></script>
 </body>
 </html>

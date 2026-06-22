@@ -110,8 +110,12 @@ async fn serve_asset(Path(path): Path<String>) -> impl IntoResponse {
     match WebAssets::get(&path) {
         Some(content) => {
             let mime = mime_guess::from_path(&path).first_or_octet_stream();
+            let no_cache = path.ends_with(".css") || path.ends_with(".js") || path.ends_with(".html");
             Response::builder()
                 .header("content-type", mime.as_ref())
+                .header("Cache-Control", if no_cache { "no-cache, no-store, must-revalidate" } else { "public, max-age=3600" })
+                .header("Pragma", "no-cache")
+                .header("Expires", "0")
                 .body(axum::body::Body::from(content.data))
                 .unwrap()
         }
